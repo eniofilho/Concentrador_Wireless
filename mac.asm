@@ -1,0 +1,3 @@
+    RSEG MAC_ADDR:CODE(1)
+    DB 0x20,0x00,0x01,0x61
+    END
