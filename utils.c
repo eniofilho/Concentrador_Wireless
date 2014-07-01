@@ -43,6 +43,30 @@ unsigned char charToHex(unsigned char * ch)
   return tmp;
 }
 
+unsigned char binToHex(unsigned char *bin )
+{
+  unsigned char tmp;
+  
+  if( (bin[0] == '0') && (bin[1] == '0') && (bin[2] == '0') && (bin[3] == '0') ) tmp = '0';
+  if( (bin[0] == '0') && (bin[1] == '0') && (bin[2] == '0') && (bin[3] == '1') ) tmp = '1';
+  if( (bin[0] == '0') && (bin[1] == '0') && (bin[2] == '1') && (bin[3] == '0') ) tmp = '2';
+  if( (bin[0] == '0') && (bin[1] == '0') && (bin[2] == '1') && (bin[3] == '1') ) tmp = '3';
+  if( (bin[0] == '0') && (bin[1] == '1') && (bin[2] == '0') && (bin[3] == '0') ) tmp = '4';
+  if( (bin[0] == '0') && (bin[1] == '1') && (bin[2] == '0') && (bin[3] == '1') ) tmp = '5';
+  if( (bin[0] == '0') && (bin[1] == '1') && (bin[2] == '1') && (bin[3] == '0') ) tmp = '6';
+  if( (bin[0] == '0') && (bin[1] == '1') && (bin[2] == '1') && (bin[3] == '1') ) tmp = '7';
+  if( (bin[0] == '1') && (bin[1] == '0') && (bin[2] == '0') && (bin[3] == '0') ) tmp = '8';
+  if( (bin[0] == '1') && (bin[1] == '0') && (bin[2] == '0') && (bin[3] == '1') ) tmp = '9';
+  if( (bin[0] == '1') && (bin[1] == '0') && (bin[2] == '1') && (bin[3] == '0') ) tmp = 'A';
+  if( (bin[0] == '1') && (bin[1] == '0') && (bin[2] == '1') && (bin[3] == '1') ) tmp = 'B';
+  if( (bin[0] == '1') && (bin[1] == '1') && (bin[2] == '0') && (bin[3] == '0') ) tmp = 'C';
+  if( (bin[0] == '1') && (bin[1] == '1') && (bin[2] == '0') && (bin[3] == '1') ) tmp = 'D';
+  if( (bin[0] == '1') && (bin[1] == '1') && (bin[2] == '1') && (bin[3] == '0') ) tmp = 'E';
+  if( (bin[0] == '1') && (bin[1] == '1') && (bin[2] == '1') && (bin[3] == '1') ) tmp = 'F';
+  
+  return tmp;
+}
+
 unsigned char checkWirelessMessage(unsigned char * msg, unsigned char size)
 {
     static unsigned char i;

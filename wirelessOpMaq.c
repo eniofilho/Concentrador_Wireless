@@ -27,6 +27,21 @@ W_OP_MAQ wOpMaq1 = {wOpMaqInit};
 //Timeout para a máquina de recepçao
 unsigned int countWireless = 0;
 
+/*------------Variáveis para o novo comportamento da SmartFix---------------------------------------*/
+
+//indica se é a primeira mensagem
+unsigned int countwData = 0; 
+
+//indica se a mensagem atual é igual a anterior
+unsigned int countwMsg = 0;
+
+//índice genérico
+unsigned int i;
+
+//int new_behavior = 0;
+
+/*-----------------------------------------------------------------------*/
+
 /* \brief Inicializacao dos metodos  e variaveis do objeto. */
 void wOpMaqInit(void * pwOp)
 {
@@ -58,7 +73,7 @@ void wOpMaqInit(void * pwOp)
 
 /* \brief Configura o modo de operação do mcu da interface wireless */
 void wOpMaqSetMode(void * pwOp, W_MODE mode)
-{
+{ //set by app : no debug mode (app::rcvSensorData)
   W_OP_MAQ * wOp = (W_OP_MAQ *)pwOp;
   
   switch(mode)
@@ -120,7 +135,7 @@ void wOpMaqListSens(void * pwOp)
 
 /* \brief Muda o canal de frequencia do concentrador. */
 void wOpMaqChangeCh(void * pwOp, unsigned char ch)
-{
+{ //command is sent to app
   W_OP_MAQ * wOp = (W_OP_MAQ *)pwOp;
   
   wOp->uart->putBuffTx(wOp->uart,'C');
@@ -270,11 +285,34 @@ void wOpMaqRxData(void * pwOp)
                       wOp->serialBuffer[12] = '0';
                     }
                     
+                    //copia os mesmo valores para o sBuffer
+                    wOp->sBuffer[0] = '<';
+                    wOp->sBuffer[1] = 'W';
+                    wOp->sBuffer[2] = 'R';
+                    wOp->sBuffer[3] = hexToChar((MAC_CONC[0] >> 4) & 0x0F);
+                    wOp->sBuffer[4] = hexToChar(MAC_CONC[0] & 0x0F);
+                    wOp->sBuffer[5] = hexToChar((MAC_CONC[1] >> 4) & 0x0F);
+                    wOp->sBuffer[6] = hexToChar(MAC_CONC[1] & 0x0F);
+                    wOp->sBuffer[7] = hexToChar((MAC_CONC[2] >> 4) & 0x0F);
+                    wOp->sBuffer[8] = hexToChar(MAC_CONC[2] & 0x0F);
+                    wOp->sBuffer[9] = hexToChar((MAC_CONC[3] >> 4) & 0x0F);
+                    wOp->sBuffer[10] = hexToChar(MAC_CONC[3] & 0x0F);
+                    wOp->sBuffer[11] = hexToChar(CONC_TIPO);
+                    if(sensorGetConcStatus())
+                    {
+                      wOp->sBuffer[12] = '1';
+                    }
+                    else
+                    {
+                      wOp->sBuffer[12] = '0';
+                    }
+                    
                     //Coloca a posição onde serão armazenados os demais dados
                     wOp->ptSerial = 13;
                   break;
                   
-                  case 0x0d:
+                 
+                  case 0x0d:   
                     wOp->state = RX_WAIT_RESP;   
                     wOp->ptSerial = 0;
                   break;
@@ -292,7 +330,7 @@ void wOpMaqRxData(void * pwOp)
             break;
             
             case RX_MODE_INV:
-                if((data != 0x0d) && (wOp->ptSerial < SZ_SERIAL_BUFFER))
+                if((data != 0x0d) && (wOp->ptSerial < SZ_SERIAL_BUFFER))  
                 {
                   if(data != ')')
                   {
@@ -330,7 +368,7 @@ void wOpMaqRxData(void * pwOp)
                   
                   if(rxLine == 1)
                   {
-                    while(count < 16)
+                    while(count < 16) //number of sensors?
                     {
                       //Preenche o restante da string
                       wOp->serialBuffer[count++] = ' ';
@@ -341,7 +379,7 @@ void wOpMaqRxData(void * pwOp)
                     count = 0;
                   }
                 }
-                else if(data == 0x0d)
+                else if(data == 0x0d) 
                 {
                   while(count < 16)
                   {
@@ -360,25 +398,142 @@ void wOpMaqRxData(void * pwOp)
             break;
             
             case RX_MODE_RX:
-                if((data != 0x0d) && (wOp->ptSerial < (SZ_SERIAL_BUFFER - 2)))
+                if((data != 0x0d) && (wOp->ptSerial < (SZ_SERIAL_BUFFER - 2))) 
                 {
                   if(data != '>')
                   {
                     //Armazena os dados no buffer
-                    wOp->serialBuffer[wOp->ptSerial++] = data; 
+                     if(countwData == 0)wOp->sBuffer[wOp->ptSerial] = data;
+                     wOp->serialBuffer[wOp->ptSerial++] = data; 
+                   
                   }
                 }
-                else if(data == 0x0d)
+                else if(data == 0x0d) 
                 {
-                  //Insere dado de fim de pacote
-                  wOp->serialBuffer[wOp->ptSerial++] = '>';
                   
-                  //Coloca \0 indicando fim de mensagem
-                  wOp->serialBuffer[wOp->ptSerial++] = 0;
-                 
-                  //Verifica a consistência da mensagem
-                  if(checkWirelessMessage(wOp->serialBuffer,wOp->ptSerial - 1))
+                  //novo comportamento do smartfix
+                  if( (countwData >=1) && (new_behavior == 1))
                   {
+                    for (i = 0; i < wOp->ptSerial; i++)
+                    {
+                      if(wOp->serialBuffer[i] == wOp->sBuffer[i])
+                      {
+                        //mensagem atual igual a anterior
+                        countwMsg++;
+                      } 
+                    }
+                      //se a mensagem for igual, manda somente o MAC
+                      if(countwMsg == wOp->ptSerial)
+                      {
+                        
+                        wOp->ptSerial = 13;
+                        
+                        for(i=0; i < 13;i++)
+                        {
+                          wOp->stmpwBuffer[i] = wOp->serialBuffer[i];
+                        }
+                        
+                        //Insere dado de fim de pacote
+                        wOp->stmpwBuffer[wOp->ptSerial++] = '>';
+                  
+                        //Coloca \0 indicando fim de mensagem
+                        wOp->stmpwBuffer[wOp->ptSerial++] = 0;
+                 
+                        //Verifica a consistência da mensagem
+                        if(checkWirelessMessage(wOp->stmpwBuffer,wOp->ptSerial - 1))
+                        {
+                            //Seta flag que indica tipo de mensagem
+                            wOp->msgType = W_MSG_RX;
+                      
+                            //Vai para o estado que espera envio
+                            wOp->state = RX_WAIT_SEND;
+                      
+                            //Confirma a recepção
+                            wOp->uart->putBuffTx(wOp->uart,'!');
+                      
+                            //Evita buffer overflow
+                            wOp->uart->reset(wOp->uart);      
+                        }
+                        else
+                        {
+                            //Considera erro na comunicação
+                            wOp->state = RX_IDLE;
+                            wOp->ptSerial = 0;
+                            wOp->uart->reset(wOp->uart);
+                   
+                            wOp->uart->putBuffTx(wOp->uart,'@');
+                            wOp->uart->putBuffTx(wOp->uart,'@');
+                            wOp->uart->putBuffTx(wOp->uart,'@');
+                        
+                        }
+                       }
+                      else
+                      {
+                        for(i=13; i < wOp->ptSerial;i++)
+                        {
+                          //se a mensagem for diferente, atualiza sBuffer
+                          if(wOp->sBuffer[i] != wOp->serialBuffer[i])
+                          { 
+                            wOp->sBuffer[i] = wOp->serialBuffer[i];
+                          }
+                        }
+                        for(i=0;i<wOp->ptSerial;i++)
+                        {
+                          wOp->stmpwBuffer[i] = wOp->sBuffer[i];
+                        } 
+                        
+                        
+                        //Insere dado de fim de pacote
+                        wOp->stmpwBuffer[wOp->ptSerial++] = '>';
+                  
+                        //Coloca \0 indicando fim de mensagem
+                        wOp->stmpwBuffer[wOp->ptSerial++] = 0;
+                        
+                        //Verifica a consistência da mensagem
+                        if(checkWirelessMessage(wOp->stmpwBuffer,wOp->ptSerial - 1))
+                        {
+                            //Seta flag que indica tipo de mensagem
+                            wOp->msgType = W_MSG_RX;
+                      
+                            //Vai para o estado que espera envio
+                            wOp->state = RX_WAIT_SEND;
+                      
+                            //Confirma a recepção
+                            wOp->uart->putBuffTx(wOp->uart,'!');
+                      
+                            //Evita buffer overflow
+                            wOp->uart->reset(wOp->uart);      
+                        }
+                        else
+                        {
+                            //Considera erro na comunicação
+                            wOp->state = RX_IDLE;
+                            wOp->ptSerial = 0;
+                            wOp->uart->reset(wOp->uart);
+                   
+                            wOp->uart->putBuffTx(wOp->uart,'@');
+                            wOp->uart->putBuffTx(wOp->uart,'@');
+                            wOp->uart->putBuffTx(wOp->uart,'@');
+                        
+                        }
+                 
+                      }
+                   
+                  countwMsg = 0;
+                  }
+                  
+                  //modo antigo ou primeira mensagem
+                  else if (new_behavior == 0)
+                  {
+                    //Insere dado de fim de pacote
+                     wOp->serialBuffer[wOp->ptSerial++] = '>';
+                  
+                    //Coloca \0 indicando fim de mensagem
+                    wOp->serialBuffer[wOp->ptSerial++] = 0;
+                 
+                    //Verifica a consistência da mensagem
+                    if(checkWirelessMessage(wOp->serialBuffer,wOp->ptSerial - 1))
+                    {
                       //Seta flag que indica tipo de mensagem
                       wOp->msgType = W_MSG_RX;
                       
@@ -389,18 +544,22 @@ void wOpMaqRxData(void * pwOp)
                       wOp->uart->putBuffTx(wOp->uart,'!');
                       
                       //Evita buffer overflow
-                      wOp->uart->reset(wOp->uart);  
-                  }
-                  else
-                  {
-                     //Considera erro na comunicação
-                     wOp->state = RX_IDLE;
-                     wOp->ptSerial = 0;
-                     wOp->uart->reset(wOp->uart);
+                      wOp->uart->reset(wOp->uart);      
+                    }
+                  
+                    else
+                    {
+                      //Considera erro na comunicação
+                      wOp->state = RX_IDLE;
+                      wOp->ptSerial = 0;
+                      wOp->uart->reset(wOp->uart);
                    
-                     wOp->uart->putBuffTx(wOp->uart,'@');
-                     wOp->uart->putBuffTx(wOp->uart,'@');
-                     wOp->uart->putBuffTx(wOp->uart,'@');
+                      wOp->uart->putBuffTx(wOp->uart,'@');
+                      wOp->uart->putBuffTx(wOp->uart,'@');
+                      wOp->uart->putBuffTx(wOp->uart,'@');
+                    }
+                  
+                    countwData++;
                   }
                 }
                 else
@@ -414,10 +573,11 @@ void wOpMaqRxData(void * pwOp)
                    wOp->uart->putBuffTx(wOp->uart,'@');
                    wOp->uart->putBuffTx(wOp->uart,'@');
                 }
+              
             break;
             
             case RX_WAIT_RESP:
-                if((data != 0x0d) && (wOp->ptSerial < 20))
+                if((data != 0x0d) && (wOp->ptSerial < 20)) //original 0x0d I changed this
                 {
                   if(data == '<')
                   {
@@ -476,7 +636,7 @@ void wOpMaqRxData(void * pwOp)
                 {
                   count++;
                   
-                  if((count < 5) && (data != 0x0d) && (data != 0x0a))
+                  if((count < 5) && (data != 0x0d) && (data != 0x0a)) //original 0x0d I changed this 
                   {
                     //Armazena os dados no buffer
                     wOp->serialBuffer[wOp->ptSerial++] = hexToChar((data >> 4) & 0x0F);

@@ -18,10 +18,17 @@ extern volatile const unsigned char * MAC_CONC;
 #define SIZE_IP 4
 #define SIZE_PORTA 2
 
+//original
 #define IP_SERVIDOR_0 10
 #define IP_SERVIDOR_1 1
 #define IP_SERVIDOR_2 1
 #define IP_SERVIDOR_3 254
+
+//High Velocity Server
+//#define IP_SERVIDOR_0 162
+//#define IP_SERVIDOR_1 216
+//#define IP_SERVIDOR_2 6
+//#define IP_SERVIDOR_3 185
 
 /*
 #define IP_SERVIDOR_0 10
@@ -33,8 +40,8 @@ extern volatile const unsigned char * MAC_CONC;
 #define VERSION_MAJOR '3'
 #define VERSION_MINOR '0'
 
-#define PORTA 0x157C
-//#define PORTA 0x1588
+#define PORTA 0x157C  //5500
+//#define PORTA 0x1588 //5512
 //#define PORTA 0x04D2
 
 #endif

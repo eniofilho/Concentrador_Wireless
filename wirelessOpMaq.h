@@ -1,5 +1,5 @@
 /*! \file uart.h
- *  \brief interface publica para o objeto uart.
+ *  \brief interface publica para a máquina que controla as mensagens do dispositivo wireless.
  */
 #ifndef __W_OP_MAQ_H__
 #define __W_OP_MAQ_H__
@@ -53,6 +53,8 @@ typedef struct W_OP_MAQ_STRUCT
    RX_STATE     state;
    UART *       uart;
    unsigned char serialBuffer[SZ_SERIAL_BUFFER];
+   unsigned char sBuffer[SZ_SERIAL_BUFFER]; // buffer para armazenar o valor atual do sensor
+   unsigned char stmpwBuffer[SZ_SERIAL_BUFFER]; //buffer com os dados a serem enviados para a aplicação
    W_MSG msgType;
    
 } W_OP_MAQ;

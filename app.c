@@ -42,33 +42,37 @@ typedef struct
   unsigned char concId[2*SIZE_CONC_MAC];
   unsigned char tipo;
   unsigned char status;
-}CONC_ST;
+}CONC_ST; //status do concentrador
 
 #pragma pack(1)
 typedef struct
 {
   unsigned char num;
-  unsigned char identificador[SIZE_SENS_ID];
-  unsigned char tipo[SIZE_SENS_TIPO];
-  unsigned char valor[SIZE_SENS_VAL];
-}SENSOR_ST;
+  unsigned char identificador[SIZE_SENS_ID]; //8
+  unsigned char tipo[SIZE_SENS_TIPO]; //wired or wireless
+  unsigned char valor[SIZE_SENS_VAL]; //4
+  unsigned char cString; //','
+}SENSOR_ST; //status do sensor cabeado
 
 #pragma pack(1)
 typedef struct
 {
     unsigned char init;
-    unsigned char estado[NUM_RELES];
-}RELE_ST;
+    //unsigned char estado[NUM_RELES];
+    unsigned char estado;  //estado do relé em hexa
+}RELE_ST; //status do relé
 
 #pragma pack(1)
 typedef struct
 {
   unsigned char initString;
   CONC_ST concentrador;
-  SENSOR_ST sensor[NUM_SENS];
+  //unsigned char c1string;
   RELE_ST rele;
+  unsigned char c1string;
+  SENSOR_ST sensor[NUM_SENS];
   unsigned char endString;
-}DATA_ST;
+}DATA_ST; //status dos dados
 
 //Protótipo das funções de escopo local
 static int checkResetBt(void);
@@ -87,6 +91,41 @@ const volatile unsigned char * MAC_CONC = (unsigned char const volatile *)0x8000
 
 /*!  \brief Guarda as informações não voláteis armazenadas na flash */
 MEMORY_CPY memoryData;
+
+/* ---- Modificações Variáveis Novo Comportamento do Smartfix--------------------------------------------------------*/
+
+/*!  \brief Indica se o concentrador funcionará de acordo com o novo comportamento */
+int new_behavior = 0;
+
+
+/*!  \brief Indica se é a primeira mensagem */
+int countData = 0;
+
+
+/*!  \brief Indica se mensagem atual é igual à anterior */
+int countMsg = 0;
+
+
+/*!  \brief Indica quantos sensores mudaram */
+int countDiff = 0;
+
+
+/*! \brief Buffer onde será armazenada a cópia da primeira mensagem a ser enviada para o servidor */
+unsigned char tempData[sizeof(DATA_ST)];
+
+
+/*!  \brief Ponteiro para os dados anteriores copiados */
+DATA_ST * protoTemp = ((DATA_ST *)&tempData[0]);
+
+
+/*! \brief Buffer onde será armazenada a mensagem atual a ser enviada para o servidor */
+unsigned char pcbuffer[sizeof(DATA_ST)];
+
+
+/*!  \brief Ponteiro para os dados da mensagem atual a ser enviada */
+DATA_ST * protocBuffer = ((DATA_ST *)&pcbuffer[0]);
+
+/*------------------------------------------------------------------------------------*/
 
 /*!  \brief Indica se a conexão está ativa */
 unsigned char connected;
@@ -156,6 +195,8 @@ void appInit(void)
 
    //Verifica a consistência dos dados armazenados na memória flash
    appCheckFlashData();
+   
+   //memoryData.ipTipo = '0'; //força para DHCP?
 
    if(memoryData.ipTipo == '0')
    {
@@ -467,7 +508,18 @@ static void sendSensorData(void)
     /////////////////////
     
     //Coloca os dados na pilha TCP/IP
-    uip_send((&(wOpMaq1.serialBuffer[0])),wOpMaq1.ptSerial);
+    
+    //se Smartfix funcionar de acordo com o novo comportamento
+    if(new_behavior)
+    {
+      uip_send((&(wOpMaq1.stmpwBuffer[0])),wOpMaq1.ptSerial); 
+    }
+    //se não,
+    else
+    {
+      uip_send((&(wOpMaq1.serialBuffer[0])),wOpMaq1.ptSerial); //original
+    }
+    
     
     //Reinicia a máquina de recepção do wireless
     wOpMaq1.cleanRx(&wOpMaq1);
@@ -490,7 +542,9 @@ static void sendSensorData(void)
     protoBuffer->concentrador.concId[6] = hexToChar((MAC_CONC[3] >> 4) & 0x0F);
     protoBuffer->concentrador.concId[7] = hexToChar(MAC_CONC[3] & 0x0F);
     protoBuffer->concentrador.tipo = hexToChar(CONC_TIPO);
-
+    
+    //protoBuffer->c1string = ',';
+    
     if(sensorGetConcStatus())
     {
       protoBuffer->concentrador.status = '1';
@@ -500,17 +554,12 @@ static void sendSensorData(void)
       protoBuffer->concentrador.status = '0';
     }
 
-    for(i=0;i<NUM_SENS;i++)
-    {
-      protoBuffer->sensor[i].num = hexToChar(i+1);
-      sensorGetId(i,&(protoBuffer->sensor[i].identificador));
-      sensorGetTipo(i,&(protoBuffer->sensor[i].tipo));
-      sensorGetValor(i,&(protoBuffer->sensor[i].valor));
-    }
-
+    protoBuffer->c1string = ',';
+    
     //Estado dos reles
     protoBuffer->rele.init = 'R';
 
+   /* --------------------- comportamento antigo: 4 bits --------------------------
     for(i=0;i<4;i++)
     {
       unsigned char releTmp;
@@ -525,16 +574,140 @@ static void sendSensorData(void)
         protoBuffer->rele.estado[i] = '0';
       }
     }
-    protoBuffer->endString = '>';
 
-    //Envia os dados
-    uip_send(pbuffer,sizeof(DATA_ST));
+    ------------------------------------------------------ */
+ 
+    
+  /* ---- Informação dos relés em Hexadecimal -----*/
+    
+    unsigned char releTmp[4];
+    
+    for(i=0;i<4;i++)
+    {
+      releTmp[i] = ioReleStatus(i);
+    }
+    
+     protoBuffer->rele.estado = binToHex(releTmp);  
+    
+ /*----------------------------------------------------*/
+    
+    if(countData == 0 || new_behavior == 0 )
+    {
+            
+      for(i=0;i<NUM_SENS;i++)
+      {
+        protoBuffer->sensor[i].num = hexToChar(i+1); //nº da porta
+        sensorGetId(i,&(protoBuffer->sensor[i].identificador));
+        sensorGetTipo(i,&(protoBuffer->sensor[i].tipo));
+        sensorGetValor(i,&(protoBuffer->sensor[i].valor));
+        protoBuffer->sensor[i].cString = ',';
+      }
 
-    //Diz que dados já foram enviados
-    sensorSetDataSent();
+
+      protoBuffer->endString = '>';
+    
+      for(i=0; i<sizeof(DATA_ST);i++)
+      {
+        tempData[i] = pbuffer[i];
+      }
+    
+      //Envia os dados
+      uip_send(pbuffer,sizeof(DATA_ST));
+
+      //Diz que dados já foram enviados
+      sensorSetDataSent();
+      
+      if(new_behavior) countData++;
+    
+     }
+    else
+    {
+      
+      for(i=0;i<NUM_SENS;i++)
+      {
+        protoBuffer->sensor[i].num = hexToChar(i+1); //nº da porta
+        sensorGetId(i,&(protoBuffer->sensor[i].identificador));
+        sensorGetTipo(i,&(protoBuffer->sensor[i].tipo));
+        sensorGetValor(i,&(protoBuffer->sensor[i].valor));
+        protoBuffer->sensor[i].cString = ',';
+      }
+      
+      countMsg = 0;
+      
+      for(i=0; i<sizeof(DATA_ST);i++)
+      {
+        if (tempData[i] == pbuffer[i]) countMsg++;;
+      }
+      
+      for(i=0;i<174;i++)
+      {
+        pcbuffer[i] = 0; 
+      }
+      
+      //armazena MAC + estado do relé do concentrador na mensagem atual
+      for(i=0;i<13;i++)
+        {
+          pcbuffer[i] = pbuffer[i];
+        }
+      
+      //se a mensagem atual == anterior
+      if(countMsg == 175)
+      {        
+        //protocBuffer->endString = '>'; 
+        pcbuffer[13] = '>';
+        
+        //Envia somente os dados do concentrador 
+         uip_send(pcbuffer,14);
+
+        //Diz que dados já foram enviados
+        sensorSetDataSent(); 
+        
+        //countMsg = 0;
+      }
+      
+      //mensagem atual diferente da mensagem anterior
+      if(countMsg != 175)
+      {
+        pcbuffer[13] = ',';
+        
+        for(i=0; i<NUM_SENS; i++)
+        {
+          if(protoTemp->sensor[i].valor != protoBuffer->sensor[i].valor)
+          {
+            sensorGetValor(i,&(protoTemp->sensor[i].valor));
+            
+           protocBuffer->sensor[i].num = hexToChar(i+1); //nº da porta
+           sensorGetId(i,&(protocBuffer->sensor[i].identificador));
+           sensorGetTipo(i,&(protocBuffer->sensor[i].tipo));
+           sensorGetValor(i,&(protocBuffer->sensor[i].valor));
+           protocBuffer->sensor[i].cString = ',';
+           countDiff++; 
+          }
+          
+          countMsg = 0;
+          
+        }
+        
+          protocBuffer->endString = '>';
+        
+          int sizeOfcbuffer = 16*countDiff + 15;
+          
+          //Envia dados do concentrador + sensores diferentes          
+          uip_send(pcbuffer,sizeOfcbuffer); 
+          
+          //Diz que dados já foram enviados
+          sensorSetDataSent();
+              
+          countDiff = 0;
+        
+      }
+       
+    }
+
   }
 }
 
+//comandos do servidor para o concentrador
 static void rcvSensorData(u8_t volatile * data, unsigned char len)
 {
   if(data[0] == '<')
@@ -764,7 +937,7 @@ static void rcvSensorData(u8_t volatile * data, unsigned char len)
             count = 3;
             do
             {
-               time *= 10;
+               time *= 10;  //time = time * 10; 
                time += (data[count] - '0');
                count++;
             }
@@ -940,6 +1113,20 @@ static void rcvSensorData(u8_t volatile * data, unsigned char len)
             sendError();
         }
       break;
+      
+    /*------Configuração do comportamento da Smartfix----------------------------*/  
+    case 'Z':
+       // comportamento novo
+      //<Z>: new behavior 
+      new_behavior = 1;
+     break;
+     
+    case 'O':
+      //comportamento original
+      //<<O>: old behavior
+      new_behavior = 0;
+      break;
+    /*--------------------------------------------*/    
       
       //Comandos para o concentrador do tipo wireless
       case 'W':

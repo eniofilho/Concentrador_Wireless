@@ -10,9 +10,9 @@
     <debug>1</debug>
     <settings>
       <name>General</name>
-      <archiveVersion>13</archiveVersion>
+      <archiveVersion>12</archiveVersion>
       <data>
-        <version>30</version>
+        <version>28</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -153,21 +153,13 @@
           <name>NoRwDynamicInit</name>
           <state>0</state>
         </option>
-        <option>
-          <name>GRuntimeLibThreads</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>MathLib</name>
-          <state>0</state>
-        </option>
       </data>
     </settings>
     <settings>
       <name>ICC430</name>
       <archiveVersion>4</archiveVersion>
       <data>
-        <version>36</version>
+        <version>35</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -188,11 +180,11 @@
         </option>
         <option>
           <name>CCListCFile</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>CCListCMnemonics</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>CCListCMessages</name>
@@ -458,14 +450,6 @@
           <name>ADefines</name>
           <state></state>
         </option>
-        <option>
-          <name>CCGuardCalls</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>OCGuardCallsSlave</name>
-          <state>0</state>
-        </option>
       </data>
     </settings>
     <settings>
@@ -659,7 +643,7 @@
       <name>XLINK</name>
       <archiveVersion>4</archiveVersion>
       <data>
-        <version>25</version>
+        <version>23</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -850,7 +834,7 @@
         </option>
         <option>
           <name>AllowExtraOutput</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>GenerateExtraOutput</name>
@@ -862,12 +846,12 @@
         </option>
         <option>
           <name>ExtraOutputFile</name>
-          <state>concentrador.hex</state>
+          <state>concentrador.a43</state>
         </option>
         <option>
           <name>ExtraOutputFormat</name>
           <version>11</version>
-          <state>75</state>
+          <state>23</state>
         </option>
         <option>
           <name>ExtraFormatVariant</name>
@@ -938,14 +922,6 @@
           <name>CrcUnitSize</name>
           <version>0</version>
           <state>0</state>
-        </option>
-        <option>
-          <name>LinkMathLib</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>IlinkThreadsSlave</name>
-          <state>1</state>
         </option>
       </data>
     </settings>
@@ -1018,9 +994,9 @@
     <debug>0</debug>
     <settings>
       <name>General</name>
-      <archiveVersion>13</archiveVersion>
+      <archiveVersion>12</archiveVersion>
       <data>
-        <version>30</version>
+        <version>28</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>0</debug>
         <option>
@@ -1062,7 +1038,7 @@
         </option>
         <option>
           <name>RTConfigPath</name>
-          <state>$TOOLKIT_DIR$\LIB\DLIB\dl430fn.h</state>
+          <state>xxx.h</state>
         </option>
         <option>
           <name>RTLibraryPath</name>
@@ -1105,7 +1081,7 @@
         </option>
         <option>
           <name>OGChipSelectMenu</name>
-          <state>MSP430	Generic MSP430 device</state>
+          <state></state>
         </option>
         <option>
           <name>GStackHeapOverride</name>
@@ -1161,21 +1137,13 @@
           <name>NoRwDynamicInit</name>
           <state>0</state>
         </option>
-        <option>
-          <name>GRuntimeLibThreads</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>MathLib</name>
-          <state>0</state>
-        </option>
       </data>
     </settings>
     <settings>
       <name>ICC430</name>
       <archiveVersion>4</archiveVersion>
       <data>
-        <version>36</version>
+        <version>35</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>0</debug>
         <option>
@@ -1293,7 +1261,7 @@
         </option>
         <option>
           <name>OutputFile</name>
-          <state>$FILE_BNAME$.r43</state>
+          <state></state>
         </option>
         <option>
           <name>CCLibConfigHeader</name>
@@ -1370,7 +1338,7 @@
         </option>
         <option>
           <name>CCOptLevelSlave</name>
-          <state>3</state>
+          <state>1</state>
         </option>
         <option>
           <name>CInput</name>
@@ -1465,14 +1433,6 @@
         <option>
           <name>ADefines</name>
           <state>NDEBUG</state>
-        </option>
-        <option>
-          <name>CCGuardCalls</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>OCGuardCallsSlave</name>
-          <state>0</state>
         </option>
       </data>
     </settings>
@@ -1606,7 +1566,7 @@
         </option>
         <option>
           <name>OutputFile</name>
-          <state>$FILE_BNAME$.r43</state>
+          <state></state>
         </option>
         <option>
           <name>AMultibyteSupport</name>
@@ -1667,7 +1627,7 @@
       <name>XLINK</name>
       <archiveVersion>4</archiveVersion>
       <data>
-        <version>25</version>
+        <version>23</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>0</debug>
         <option>
@@ -1676,7 +1636,7 @@
         </option>
         <option>
           <name>OutputFile</name>
-          <state>concentrador.txt</state>
+          <state></state>
         </option>
         <option>
           <name>OutputFormat</name>
@@ -1947,14 +1907,6 @@
           <version>0</version>
           <state>0</state>
         </option>
-        <option>
-          <name>LinkMathLib</name>
-          <state>0</state>
-        </option>
-        <option>
-          <name>IlinkThreadsSlave</name>
-          <state>1</state>
-        </option>
       </data>
     </settings>
     <settings>
@@ -2000,7 +1952,7 @@
         </option>
         <option>
           <name>OutputFile</name>
-          <state>$PROJ_FNAME$.ulp</state>
+          <state></state>
         </option>
         <option>
           <name>ULPStatus</name>

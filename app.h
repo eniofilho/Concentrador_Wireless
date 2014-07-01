@@ -10,6 +10,11 @@ void appEnableTCP(void);
 void appSendConnect(void);
 unsigned char appIsDhcp(void);
 
+//i added this
+/*!  \brief Indica se o concentrador funcionará de acordo com o novo comportamento */
+extern int new_behavior;
+
+
 typedef struct appState
 {
   char inputBuffer[10];

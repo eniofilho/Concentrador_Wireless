@@ -45,6 +45,7 @@
 
 /*!  \brief Tamanho do identificador dos sensores */
 #define DATA_SIZE 64
+//#define DATA_SIZE 72 //I ADDED THIS TO COUNT BATTERY DATA (+ 8 bits)
 
 /*!  \brief Estado 0: Espera pelo inicio da transmissão */
 #define IDLE 0
@@ -68,6 +69,7 @@ typedef struct
 {
   unsigned long identificador;
   unsigned char tipo;
+  //unsigned int batt; //i added this
   unsigned int valor;
   unsigned char estado;
   unsigned int count;
@@ -254,6 +256,7 @@ __interrupt void Timer_A (void)
             //Muito tempo sem receber informação do sensor
             serial[i].identificador = 0xFFFFFFFF;
             serial[i].tipo = 0xFF;
+            //serial[i].batt = 0xFF; //i added this
             serial[i].valor = 0xFFFF;
           }
         }
@@ -368,7 +371,7 @@ __interrupt void Timer_A (void)
       case DATA_WAIT:
         if(serial[i].count >= (SAMPLE_BIT - 2))
         {
-          //Recebe os 64 bits (identificador + tipo + valor + CRC)
+          //Recebe os 64 bits (identificador + tipo + valor + CRC) 
           if(serial[i].rxBits == DATA_SIZE)
           {
             serial[i].estado = STOP_BIT;
@@ -429,6 +432,7 @@ __interrupt void Timer_A (void)
                 {
                     //Erro de CRC
                     serial[i].identificador = 0xFFFFFFFE;
+                    //serial[i].batt = 0xFE; //i added this
                     serial[i].tipo = 0xFE;
                     serial[i].valor = 0xFFFE;
 
@@ -547,6 +551,24 @@ void sensorGetValor(unsigned char num, void * data)
       dataCh[3] = hexToChar((serial[num].valor) & 0x0F);
   }
 }
+
+////I added this
+///*!  \brief Obter a string de bateria de um determinado sensor */
+//void sensorGetBatt(unsigned char num, void * data)
+//{
+//  unsigned char * dataCh = (unsigned char *) data;
+//
+//  if(serial[num].batt == 0xFE)
+//  {
+//      dataCh[0] = '?';
+//      dataCh[1] = '?';
+//  }
+//  else
+//  {
+//      dataCh[0] = hexToChar((serial[num].tipo >> 4) & 0x0F);
+//      dataCh[1] = hexToChar((serial[num].tipo) & 0x0F);
+//  }
+//}
 
 /*!  \brief Função parecida a sensorGetValor, porém retorna o status dos sensores sem gravar no buffer */
 unsigned char sensorIsSet(unsigned char num)
